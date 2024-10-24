@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './Menu.css';
 
 const Menu = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [menuItems, setMenuItems] = useState([]);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [itemName, setItemName] = useState('');
-    const [itemPrice, setItemPrice] = useState('');
-    const [itemDescription, setItemDescription] = useState('');
+    const [quantities, setQuantities] = useState({});
 
     useEffect(() => {
         fetchMenuItems();
@@ -22,79 +22,55 @@ const Menu = () => {
         }
     };
 
-    const handleAddItemClick = () => {
-        setIsFormOpen(true);
+    const handleQuantityChange = (itemId, value) => {
+        setQuantities(prev => ({ ...prev, [itemId]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const newItem = { name: itemName, price: itemPrice, description: itemDescription };
+    const handleSendOrder = async (item) => {
+        const quantity = quantities[item._id] || 0;
+        if (quantity > 0) {
+            try {
+                await axios.post('http://localhost:5000/api/orders', {
+                    itemId: item._id,
+                    quantity,
+                    tableId: location.state.tableId, // Pass tableId
+                });
+                alert(`Order for ${quantity} ${item.name}(s) sent!`);
+                setQuantities(prev => ({ ...prev, [item._id]: 0 }));
 
-        try {
-            const response = await axios.post('http://localhost:5000/api/menuitems', newItem);
-            setMenuItems([...menuItems, response.data]); // Add the new item to the list
-            setItemName('');
-            setItemPrice('');
-            setItemDescription('');
-            setIsFormOpen(false);
-        } catch (error) {
-            console.error('Error adding menu item:', error);
+                // Navigate back to Orders
+                navigate('/orders', {
+                    state: {
+                        tableId: location.state.tableId // Pass tableId back
+                    }
+                });
+            } catch (error) {
+                console.error('Error sending order:', error);
+            }
+        } else {
+            alert('Please enter a quantity greater than 0');
         }
-    };
-
-    const handleClose = () => {
-        setIsFormOpen(false);
     };
 
     return (
         <div className="menu-panel">
-            <div className="menu-header">
-                <h2>Menu</h2>
-                <button onClick={handleAddItemClick}>Add Item</button>
-            </div>
-            {isFormOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h3>Add New Item</h3>
-                        <form onSubmit={handleSubmit}>
-                            <label>
-                                Item Name:
-                                <input
-                                    type="text"
-                                    value={itemName}
-                                    onChange={(e) => setItemName(e.target.value)}
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Price:
-                                <input
-                                    type="number"
-                                    value={itemPrice}
-                                    onChange={(e) => setItemPrice(e.target.value)}
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Description:
-                                <textarea
-                                    value={itemDescription}
-                                    onChange={(e) => setItemDescription(e.target.value)}
-                                    required
-                                />
-                            </label>
-                            <button type="submit">Add</button>
-                            <button type="button" onClick={handleClose}>Cancel</button>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <h2>Menu</h2>
             <div className="menu-items">
                 {menuItems.map(item => (
                     <div key={item._id} className="menu-item">
                         <h3>{item.name}</h3>
                         <p>Price: ${item.price}</p>
                         <p>{item.description}</p>
+                        <label>
+                            Quantity:
+                            <input
+                                type="number"
+                                value={quantities[item._id] || 0}
+                                onChange={(e) => handleQuantityChange(item._id, e.target.value)}
+                                min="0"
+                            />
+                        </label>
+                        <button onClick={() => handleSendOrder(item)}>Send to Orders</button>
                     </div>
                 ))}
             </div>

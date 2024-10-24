@@ -24,9 +24,22 @@ const bookingSchema = new mongoose.Schema({
   members: Number,
   tableId: Number,
   area: String,
+  orderedItems: [{
+    itemId: mongoose.Schema.Types.ObjectId,
+    quantity: Number,
+  }],
 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
+
+// Menu Item Schema
+const menuItemSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  description: { type: String, required: true },
+});
+
+const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 
 // API endpoint to create a booking
 app.post('/api/book-table', async (req, res) => {
@@ -51,24 +64,10 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
-// Menu Item Schema
-const menuItemSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-  description: { type: String, required: true },
-  
-});
-
-const MenuItem = mongoose.model('MenuItem', menuItemSchema);
-
 // API endpoint to add a menu item
 app.post('/api/menuitems', async (req, res) => {
   const { name, price, description } = req.body;
 
-  // Log the incoming request data
-  console.log('Request Body:', req.body);
-
-  // Validate fields
   if (!name || !price || !description) {
       return res.status(400).json({ error: 'All fields (name, price, description) are required' });
   }
@@ -89,6 +88,44 @@ app.get('/api/menuitems', async (req, res) => {
     res.status(200).json(items);
   } catch (error) {
     res.status(400).json({ message: 'Error fetching menu items', error: error.message });
+  }
+});
+
+// API endpoint to place an order by updating the booking
+// API endpoint to place an order by updating the booking
+app.post('/api/orders', async (req, res) => {
+  const { itemId, quantity, tableId } = req.body;
+
+  if (!itemId || quantity <= 0) {
+      return res.status(400).json({ error: 'Item ID and quantity are required' });
+  }
+
+  try {
+      // Find the booking for the table
+      const booking = await Booking.findOne({ tableId });
+
+      if (booking) {
+          // Add the ordered item to the booking
+          booking.orderedItems.push({ itemId, quantity });
+          await booking.save();
+          res.status(200).json(booking);
+      } else {
+          res.status(404).json({ message: 'Booking not found for this table' });
+      }
+  } catch (error) {
+      res.status(400).json({ message: 'Error updating booking with order', error: error.message });
+  }
+});
+
+// API endpoint to get all orders (ordered items) for a table
+app.get('/api/orders/:tableId', async (req, res) => {
+  const { tableId } = req.params;
+
+  try {
+      const booking = await Booking.findOne({ tableId }).populate('orderedItems.itemId');
+      res.status(200).json(booking || { message: 'No orders found for this table' });
+  } catch (error) {
+      res.status(400).json({ message: 'Error fetching orders', error: error.message });
   }
 });
 

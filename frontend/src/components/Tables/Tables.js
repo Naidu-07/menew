@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Tables.css";
@@ -16,6 +16,19 @@ const TableBooking = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
 
+  // Load tables from local storage on component mount
+  useEffect(() => {
+    const storedTables = JSON.parse(localStorage.getItem("tables"));
+    if (storedTables) {
+      setTables(storedTables);
+    }
+  }, []);
+
+  // Update local storage whenever tables change
+  useEffect(() => {
+    localStorage.setItem("tables", JSON.stringify(tables));
+  }, [tables]);
+
   const addTable = (area) => {
     const newId = tables[area].length + 1;
     const newTable = { id: newId, status: "unoccupied" };
@@ -26,10 +39,15 @@ const TableBooking = () => {
   };
 
   const deleteTable = (area, tableId) => {
-    setTables((prevTables) => ({
-      ...prevTables,
-      [area]: prevTables[area].filter((table) => table.id !== tableId),
-    }));
+    setTables((prevTables) => {
+      const updatedArea = prevTables[area]
+        .filter((table) => table.id !== tableId)
+        .map((table, index) => ({ ...table, id: index + 1 })); // Renumber tables
+      return {
+        ...prevTables,
+        [area]: updatedArea,
+      };
+    });
   };
 
   const handleBookTable = async (name, members) => {
@@ -40,13 +58,13 @@ const TableBooking = () => {
         }
         return table;
       });
-
+  
       setTables((prevTables) => ({
         ...prevTables,
         [selectedTable.area]: updatedTables,
       }));
       setModalOpen(false); // Close the modal after booking
-
+  
       // Save the booking to MongoDB
       try {
         await axios.post('http://localhost:5000/api/book-table', {
@@ -55,7 +73,7 @@ const TableBooking = () => {
           tableId: selectedTable.id,
           area: selectedTable.area,
         });
-
+  
         // Navigate to the Orders page with booking details
         navigate('/orders', { state: { name, members, tableId: selectedTable.id } });
       } catch (error) {
@@ -72,14 +90,16 @@ const TableBooking = () => {
         }
         return table;
       });
+      
       setTables((prevTables) => ({
         ...prevTables,
         [selectedTable.area]: updatedTables,
       }));
+      
       setSelectedTable(null); // Clear the selected table
     }
   };
-
+  
   const renderTables = (area) => {
     return tables[area].map((table) => (
       <div key={table.id} className={`table-row ${table.status}`}>
@@ -104,7 +124,11 @@ const TableBooking = () => {
             <button className="btn btn-cancel" onClick={handleCancelBooking}>
               Cancel
             </button>
-            <button className="btn btn-delete" onClick={() => deleteTable(area, table.id)}>
+            <button 
+              className="btn btn-delete" 
+              onClick={() => deleteTable(area, table.id)} 
+              disabled
+            >
               Delete
             </button>
           </>
@@ -112,6 +136,7 @@ const TableBooking = () => {
       </div>
     ));
   };
+  
 
   return (
     <div className="table-booking">
