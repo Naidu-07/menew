@@ -3,10 +3,11 @@ import './Dashboard.css';
 import table from '../../assets/table.gif'
 import order from '../../assets/ordernow.gif'
 import menu from '../../assets/menu.gif';
-import cust from '../../assets/customers.gif';
 import custt from '../../assets/customerss.gif';
 import kitch from '../../assets/kitchen.gif';
 import rev from '../../assets/revenue.gif'
+import take from '../../assets/take.gif'
+import payment from '../../assets/payment.gif'
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -32,7 +33,7 @@ const Dashboard = () => {
         </div>
 
         <div className="stat-card">
-          <Link to="/kitchen-display"><img src={kitch} alt="Kitchen" className="stat-icon" /></Link>
+          <Link to="/kitchen"><img src={kitch} alt="Kitchen" className="stat-icon" /></Link>
           <h3>Kitchen</h3>
         </div>
 
@@ -42,18 +43,18 @@ const Dashboard = () => {
         </div>
 
         <div className="stat-card">
-          <img src={custt} alt="Customers" className="stat-icon" />
+          <Link to="/takeaway"><img src={take} alt="Takeaway" className="stat-icon" /></Link>
+          <h3>Take Away</h3>
+        </div>
+
+        <div className="stat-card">
+        <Link to="/customer"><img src={custt} alt="Customers" className="stat-icon" /></Link>
           <h3>Customers</h3>
         </div>
 
         <div className="stat-card">
-          <img src={cust} alt="Customers" className="stat-icon" />
-          <h3>Customers</h3>
-        </div>
-
-        <div className="stat-card">
-          <img src={cust} alt="Customers" className="stat-icon" />
-          <h3>Customers</h3>
+          <img src={payment} alt="Payment" className="stat-icon" />
+          <h3>Payment</h3>
         </div>
         
       </div>

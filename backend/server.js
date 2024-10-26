@@ -20,13 +20,13 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/restaurant'
 
 // Booking Schema
 const bookingSchema = new mongoose.Schema({
-  name: String,
-  members: Number,
-  tableId: Number,
-  area: String,
+  name: { type: String, required: true },
+  members: { type: Number, required: true },
+  tableId: { type: Number, required: true },
+  area: { type: String, required: true },
   orderedItems: [{
-    itemId: mongoose.Schema.Types.ObjectId,
-    quantity: Number,
+    itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem' },
+    quantity: { type: Number, required: true },
   }],
 });
 
@@ -44,23 +44,61 @@ const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 // API endpoint to create a booking
 app.post('/api/book-table', async (req, res) => {
   const { name, members, tableId, area } = req.body;
-  const newBooking = new Booking({ name, members, tableId, area });
 
-  try {
-    await newBooking.save();
-    res.status(201).send(newBooking);
-  } catch (error) {
-    res.status(400).send(error);
+  if (!name || !members || !tableId || !area) {
+    return res.status(400).json({ error: 'All fields are required' });
   }
+
+  const booking = new Booking({ name, members, tableId, area });
+  await booking.save();
+  res.status(201).json(booking);
 });
 
-// API endpoint to get all bookings
+// API endpoint to fetch bookings
 app.get('/api/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find();
-    res.status(200).send(bookings);
+    res.json(bookings);
   } catch (error) {
-    res.status(400).send(error);
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to fetch menu items
+app.get('/api/menuitems', async (req, res) => {
+  try {
+    const items = await MenuItem.find();
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching menu items:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to place an order
+app.post('/api/bookings', async (req, res) => {
+  const { orders, tableId } = req.body;
+
+  if (!orders || orders.length === 0) {
+    return res.status(400).json({ error: 'Orders are required' });
+  }
+
+  try {
+    const booking = await Booking.findOne({ tableId });
+
+    if (booking) {
+      orders.forEach(order => {
+        booking.orderedItems.push(order);
+      });
+      await booking.save();
+      res.status(200).json(booking);
+    } else {
+      res.status(404).json({ message: 'Booking not found for this table' });
+    }
+  } catch (error) {
+    console.error("Error updating booking with order:", error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -68,68 +106,11 @@ app.get('/api/bookings', async (req, res) => {
 app.post('/api/menuitems', async (req, res) => {
   const { name, price, description } = req.body;
 
-  if (!name || !price || !description) {
-      return res.status(400).json({ error: 'All fields (name, price, description) are required' });
-  }
-
-  try {
-      const newMenuItem = new MenuItem({ name, price, description });
-      await newMenuItem.save();
-      res.status(201).json(newMenuItem);
-  } catch (err) {
-      res.status(400).json({ message: 'Error adding menu item', error: err.message });
-  }
+  const menuItem = new MenuItem({ name, price, description });
+  await menuItem.save();
+  res.status(201).json(menuItem);
 });
 
-// API endpoint to get all menu items
-app.get('/api/menuitems', async (req, res) => {
-  try {
-    const items = await MenuItem.find();
-    res.status(200).json(items);
-  } catch (error) {
-    res.status(400).json({ message: 'Error fetching menu items', error: error.message });
-  }
-});
-
-// API endpoint to place an order by updating the booking
-// API endpoint to place an order by updating the booking
-app.post('/api/orders', async (req, res) => {
-  const { itemId, quantity, tableId } = req.body;
-
-  if (!itemId || quantity <= 0) {
-      return res.status(400).json({ error: 'Item ID and quantity are required' });
-  }
-
-  try {
-      // Find the booking for the table
-      const booking = await Booking.findOne({ tableId });
-
-      if (booking) {
-          // Add the ordered item to the booking
-          booking.orderedItems.push({ itemId, quantity });
-          await booking.save();
-          res.status(200).json(booking);
-      } else {
-          res.status(404).json({ message: 'Booking not found for this table' });
-      }
-  } catch (error) {
-      res.status(400).json({ message: 'Error updating booking with order', error: error.message });
-  }
-});
-
-// API endpoint to get all orders (ordered items) for a table
-app.get('/api/orders/:tableId', async (req, res) => {
-  const { tableId } = req.params;
-
-  try {
-      const booking = await Booking.findOne({ tableId }).populate('orderedItems.itemId');
-      res.status(200).json(booking || { message: 'No orders found for this table' });
-  } catch (error) {
-      res.status(400).json({ message: 'Error fetching orders', error: error.message });
-  }
-});
-
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

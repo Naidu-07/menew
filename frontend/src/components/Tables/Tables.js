@@ -58,13 +58,13 @@ const TableBooking = () => {
         }
         return table;
       });
-  
+
       setTables((prevTables) => ({
         ...prevTables,
         [selectedTable.area]: updatedTables,
       }));
       setModalOpen(false); // Close the modal after booking
-  
+
       // Save the booking to MongoDB
       try {
         await axios.post('http://localhost:5000/api/book-table', {
@@ -73,7 +73,7 @@ const TableBooking = () => {
           tableId: selectedTable.id,
           area: selectedTable.area,
         });
-  
+
         // Navigate to the Orders page with booking details
         navigate('/orders', { state: { name, members, tableId: selectedTable.id } });
       } catch (error) {
@@ -99,7 +99,7 @@ const TableBooking = () => {
       setSelectedTable(null); // Clear the selected table
     }
   };
-  
+
   const renderTables = (area) => {
     return tables[area].map((table) => (
       <div key={table.id} className={`table-row ${table.status}`}>
@@ -121,8 +121,14 @@ const TableBooking = () => {
           </>
         ) : (
           <>
-            <button className="btn btn-cancel" onClick={handleCancelBooking}>
-              Cancel
+            <button 
+              className="btn btn-cancel" 
+              onClick={() => {
+                setSelectedTable({ area, id: table.id });
+                handleCancelBooking();
+              }}
+            >
+              Cancel Booking
             </button>
             <button 
               className="btn btn-delete" 
@@ -136,7 +142,6 @@ const TableBooking = () => {
       </div>
     ));
   };
-  
 
   return (
     <div className="table-booking">

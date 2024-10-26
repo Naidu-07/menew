@@ -7,7 +7,10 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Tables from './components/Tables/Tables';
 import Menu from './components/Menu/Menu';
 import Revenue from './components/Revenue/Revenue';
+import Kitchen from './components/Kitchen/Kitchen';
 import './App.css';
+import Takeaway from './components/Takeaway/Takeaway';
+import Torders from './components/Takeaway/Torders/Torders'
 
 const App = () => {
     return (
@@ -19,6 +22,9 @@ const App = () => {
                 <Route path="/menu" element={<Menu />} />
                 <Route path="/revenue" element={<Revenue />} />
                 <Route path="/bookings" element={<Bookings />} />
+                <Route path="/kitchen" element={<Kitchen />} />
+                <Route path="/takeaway" element={<Takeaway />} />
+                <Route path="/torders" element={<Torders />} />
             </Routes>
     );
 };
