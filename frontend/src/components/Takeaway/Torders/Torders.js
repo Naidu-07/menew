@@ -26,7 +26,14 @@ const Torders = () => {
                 <ul>
                     {orders.map(order => (
                         <li key={order._id}>
-                            Item: {order.itemId ? order.itemId.name : 'Unknown Item'} - Quantity: {order.quantity}
+                            <h3>Order ID: {order._id}</h3>
+                            <ul>
+                                {order.orderedItems.map(item => (
+                                    <li key={item.itemId._id}>
+                                        Item: {item.itemId.name} - Quantity: {item.quantity}
+                                    </li>
+                                ))}
+                            </ul>
                         </li>
                     ))}
                 </ul>

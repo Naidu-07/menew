@@ -35,17 +35,16 @@ const Takeaway = () => {
 
         if (orders.length > 0) {
             try {
-                // Assuming you want to send orders to a different endpoint
-                await axios.post('http://localhost:5000/api/orders', {
+                const response = await axios.post('http://localhost:5000/api/orders', {
                     orderedItems: orders,
                 });
 
-                alert('Orders sent successfully!');
+                alert(`Order sent successfully! Order ID: ${response.data.orderId}`);
                 
                 // Reset quantities
                 setQuantities({});
                 // Navigate to the Torders page after sending the order
-                navigate('/torders');
+                navigate('/torders', { state: { orderId: response.data.orderId } });
             } catch (error) {
                 console.error('Error sending orders:', error);
                 alert('There was an error sending your orders. Please try again.');
@@ -65,7 +64,6 @@ const Takeaway = () => {
                         <h3>{item.name}</h3>
                         <p>Price: ${item.price}</p>
                         
-                        {/* Quantity Label and Input */}
                         <label className="quantity-label">Quantity:</label>
                         <div className="quantity-controls">
                             <button onClick={() => handleQuantityChange(item._id, (quantities[item._id] || 0) + 1)}>+</button>
@@ -81,7 +79,6 @@ const Takeaway = () => {
                 ))}
             </div>
 
-            {/* Add to Orders Button */}
             <div className="button-container">
                 <button 
                     onClick={handleAddToOrders} 
