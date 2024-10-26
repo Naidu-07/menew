@@ -152,6 +152,20 @@ app.post('/api/menuitems', async (req, res) => {
   res.status(201).json(menuItem);
 });
 
+// API endpoint to fetch a single order by ID
+app.get('/api/orders/:id', async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('orderedItems.itemId');
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        res.json(order);
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
